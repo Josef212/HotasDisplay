@@ -191,11 +191,11 @@ void DirectOutputWrapper::UpdatePage(int pageNumber)
 {
 	std::cout << "Updating page " << pageNumber << std::endl;
 
-	wchar_t buffer[16];
-	swprintf_s(buffer, 16, L"Page: %d", pageNumber);
-	SetString(pageNumber, 0, buffer);
-	swprintf_s(buffer, 16, L"Scroll: %d", m_scroll);
-	SetString(pageNumber, 1, buffer);
+	//wchar_t buffer[16];
+	//swprintf_s(buffer, 16, L"Page: %d", pageNumber);
+	//SetString(pageNumber, 0, buffer);
+	//swprintf_s(buffer, 16, L"Scroll: %d", m_scroll);
+	//SetString(pageNumber, 1, buffer);
 }
 
 void DirectOutputWrapper::UpdatePageOnScroll(int onDownMinusUp)

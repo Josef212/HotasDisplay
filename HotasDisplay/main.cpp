@@ -17,8 +17,8 @@ BOOL ControlHandler(DWORD fdwCtrlType);
 bool CheckSettingsFile(std::wstring& profilePath);
 void CreateSettingsFile();
 
-void GetPainitePrice();
-void ReadPainitePrice();
+void GetPainitePrice(DirectOutputWrapper& output);
+void ReadPainitePrice(DirectOutputWrapper& output);
 
 int main()
 {
@@ -56,13 +56,14 @@ int main()
 	output.RegisterSoftBtnCbk();
 	output.RegisterPageCbk();
 
-	output.SetPage(1, FLAG_SET_AS_ACTIVE);
+	output.SetPage(0, FLAG_SET_AS_ACTIVE);
 	output.UpdateCurrentPage();
-
-	GetPainitePrice();
 
 	while (!closeOnWindowX)
 	{
+		GetPainitePrice(output);
+		Sleep(5000);
+
 		//static int counter = 0;
 		//wchar_t buffer[16];
 		//swprintf_s(buffer, 16, L"Counter: %d", counter++);
@@ -93,7 +94,7 @@ BOOL ControlHandler(DWORD fdwCtrlType)
 
 bool CheckSettingsFile(std::wstring& profilePath)
 {
-	std::cout << "Checking for txt file... ";
+	std::cout << "Checking for settings file... ";
 	const char* fileName = SETTINGS_FILE;
 	bool profileFound = false;
 
@@ -153,4 +154,43 @@ void CreateSettingsFile()
 	file.close();
 
 	std::cout << "Wrote to txt file." << std::endl;
+}
+
+void GetPainitePrice(DirectOutputWrapper& output)
+{
+	system("node price_request.js");
+	ReadPainitePrice(output);
+}
+
+void ReadPainitePrice(DirectOutputWrapper& output)
+{
+	std::cout << "Checking for prices file... ";
+	const char* fileName = "prices.txt";
+
+	struct stat buffer;
+	if (stat(fileName, &buffer) == 0)
+	{
+		std::cout << "FOUND. \Reading price." << std::endl;
+		std::ifstream stream(fileName);
+		std::string line;
+		int lineNumber = 0;
+		size_t strSize;
+
+		if (stream.is_open())
+		{
+			while (std::getline(stream, line))
+			{
+				std::cout << line << std::endl;
+				if (lineNumber >= 0 && lineNumber < 3)
+				{
+					output.SetString(0, lineNumber, std::wstring(line.begin(), line.end()).c_str());
+				}
+
+				++lineNumber;
+			}
+
+			stream.close();
+			std::cout << std::endl;
+		}
+	}
 }
