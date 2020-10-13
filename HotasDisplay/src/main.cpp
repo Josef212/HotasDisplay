@@ -54,8 +54,7 @@ int main()
 
 	while (!closeOnWindowX)
 	{
-		dataProvider.Update();
-		output.UpdateCurrentPage();
+		output.Refresh();
 		Sleep(10000);
 
 		//static int counter = 0;

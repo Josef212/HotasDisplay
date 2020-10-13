@@ -12,7 +12,7 @@ public:
 	virtual ~PainiteDataProvider() = default;
 
 	virtual bool CanResetScroll() const override { return true; }
-	virtual void Update();
+	virtual void Update() override;
 	virtual void OnScrollUpdated(int scroll) override;
 	virtual std::string GetString(int page, int line) override;
 

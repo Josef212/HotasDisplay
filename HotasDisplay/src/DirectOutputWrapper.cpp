@@ -1,17 +1,20 @@
 #include "stdafx.h"
 #include "DirectOutputWrapper.h"
+#include "DataProviders/EmptyDataProvider.h"
 
 #define GET_FN(TYPE, DLL, NAME) (TYPE)GetProcAddress(DLL, NAME)
 #define INSTANCE(ctx) static_cast<DirectOutputWrapper*>(ctx)
 //#define CHECK_HR(hr) if(FAILED(hr)) { std::cout << "FAILED: " << std::system_category().message(m_hr) << std::endl; } else { std::cout << "DONE." << std::endl; }
 #define CHECK_HR(hr) CheckLastError()
 
-DirectOutputWrapper::DirectOutputWrapper() : m_dataProvider(nullptr), m_deviceList(), m_dll(NULL), m_hr(S_OK), m_currentPage(0), m_scroll(0)
+EmptyDataProvider DefaultDataProvider;
+
+DirectOutputWrapper::DirectOutputWrapper() : m_dataProvider(&DefaultDataProvider), m_deviceList(), m_dll(NULL), m_hr(S_OK), m_currentPage(0), m_scroll(0)
 {
 	
 }
 
-DirectOutputWrapper::DirectOutputWrapper(IDisplayDataProvider* dataProvider) : m_dataProvider(dataProvider), m_deviceList(), m_dll(NULL), m_hr(S_OK), m_currentPage(0), m_scroll(0)
+DirectOutputWrapper::DirectOutputWrapper(IDisplayDataProvider* dataProvider) : m_dataProvider(dataProvider != nullptr ? dataProvider : &DefaultDataProvider), m_deviceList(), m_dll(NULL), m_hr(S_OK), m_currentPage(0), m_scroll(0)
 {
 
 }
@@ -19,6 +22,11 @@ DirectOutputWrapper::DirectOutputWrapper(IDisplayDataProvider* dataProvider) : m
 DirectOutputWrapper::~DirectOutputWrapper()
 {
 	
+}
+
+void DirectOutputWrapper::SetDataProvider(IDisplayDataProvider* dataProvider)
+{
+	m_dataProvider = dataProvider != nullptr ? dataProvider : &DefaultDataProvider;
 }
 
 HRESULT DirectOutputWrapper::Init(const wchar_t* pluginName)
@@ -129,22 +137,21 @@ HRESULT DirectOutputWrapper::SetPage(int pageNumber, const DWORD flag, const TCH
 
 HRESULT DirectOutputWrapper::SetString(int pageNumber, int stringLineId, const wchar_t* output)
 {
-	std::cout << "Setting string [" << pageNumber << " - " << stringLineId << "] ... ";
+	//std::cout << "Setting string [" << pageNumber << " - " << stringLineId << "] ... ";
 	auto setStringFn = GET_FN(Pfn_DirectOutput_SetString, m_dll, "DirectOutput_SetString");
 	m_hr = setStringFn(m_deviceList[0], pageNumber, stringLineId, wcslen(output), output);
-	CHECK_HR(m_hr);
+	//CHECK_HR(m_hr);
 
 	return m_hr;
 }
 
 HRESULT DirectOutputWrapper::SetString(int pageNumber, int stringLineId, const std::string& output)
 {
-	std::cout << "Setting string [" << pageNumber << " - " << stringLineId << "] ... ";
-	auto setStringFn = GET_FN(Pfn_DirectOutput_SetString, m_dll, "DirectOutput_SetString");
-
+	//std::cout << "Setting string [" << pageNumber << " - " << stringLineId << "] ... ";
 	std::wstring wstr(output.begin(), output.end());
+	auto setStringFn = GET_FN(Pfn_DirectOutput_SetString, m_dll, "DirectOutput_SetString");
 	m_hr = setStringFn(m_deviceList[0], pageNumber, stringLineId, wstr.size(), wstr.c_str());
-	CHECK_HR(m_hr);
+	//CHECK_HR(m_hr);
 
 	return m_hr;
 }
@@ -217,6 +224,12 @@ void DirectOutputWrapper::UpdatePage(int pageNumber)
 	//SetString(pageNumber, 0, buffer);
 	//swprintf_s(buffer, 16, L"Scroll: %d", m_scroll);
 	//SetString(pageNumber, 1, buffer);
+}
+
+void DirectOutputWrapper::Refresh()
+{
+	m_dataProvider->Update();
+	UpdateCurrentPage();
 }
 
 void DirectOutputWrapper::UpdatePageOnScroll(int onDownMinusUp)

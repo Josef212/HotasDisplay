@@ -16,7 +16,7 @@ public:
 	DirectOutputWrapper(IDisplayDataProvider* dataProvider);
 	~DirectOutputWrapper();
 
-	void SetDataProvider(IDisplayDataProvider* dataProvider) { m_dataProvider = dataProvider; }
+	void SetDataProvider(IDisplayDataProvider* dataProvider);
 	const IDisplayDataProvider* GetDataProvider() { return m_dataProvider; }
 
 	HRESULT Init(const wchar_t* pluginName);
@@ -39,6 +39,8 @@ public:
 	void HandlePageChange();
 	void UpdateCurrentPage();
 	void UpdatePage(int pageNumber);
+
+	void Refresh();
 
 private:
 	void UpdatePageOnScroll(int onDownMinusUp);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 __interface IDisplayDataProvider
 {
 public:
