@@ -38,35 +38,11 @@ void GetPainitePrice(std::vector<std::string>& out)
 
 void ReadPainitePrice(std::vector<std::string>& out)
 {
-	std::cout << "Checking for prices file... ";
+	std::cout << "Checking for prices file... " << std::endl;
+
 	const char* fileName = "prices.txt";
-
-	struct stat buffer;
-	if (stat(fileName, &buffer) == 0)
-	{
-		std::cout << "FOUND. \Reading price." << std::endl;
-		std::ifstream stream(fileName);
-		std::string line;
-		int lineNumber = 0;
-		size_t strSize;
-
-		if (stream.is_open())
-		{
-			out.clear();
-
-			while (std::getline(stream, line))
-			{
-				std::cout << line << std::endl;
-				if (lineNumber >= 0 && lineNumber < 3)
-				{
-					out.push_back(line);
-				}
-
-				++lineNumber;
-			}
-
-			stream.close();
-			std::cout << std::endl;
-		}
-	}
+	out.clear();
+	ReadTxtFile(fileName, 
+		[&](std::string& line, uint32_t lineNumber) { out.push_back(line); }
+	);
 }
