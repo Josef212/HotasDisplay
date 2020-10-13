@@ -55,7 +55,7 @@ int main()
 	while (!closeOnWindowX)
 	{
 		output.Refresh();
-		Sleep(10000);
+		Sleep(dataProvider.DelayMs());
 
 		//static int counter = 0;
 		//wchar_t buffer[16];

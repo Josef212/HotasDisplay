@@ -11,6 +11,7 @@ public:
 	PainiteDataProvider() = default;
 	virtual ~PainiteDataProvider() = default;
 
+	virtual unsigned long DelayMs() const override { return 10000; }
 	virtual bool CanResetScroll() const override { return true; }
 	virtual void Update() override;
 	virtual void OnScrollUpdated(int scroll) override;
