@@ -9,7 +9,7 @@
 
 // https://forums.frontier.co.uk/threads/how-to-use-x52-pro-sdk-making-us-of-the-mfd-and-leds.428813/
 
-#define SETTINGS_FILE "Settings.txt"
+#define SETTINGS_FILE "settings.txt"
 
 bool closeOnWindowX = false;
 
@@ -158,7 +158,7 @@ void CreateSettingsFile()
 
 void GetPainitePrice(DirectOutputWrapper& output)
 {
-	system("node price_request.js");
+	system("node scripts/price_request.js");
 	ReadPainitePrice(output);
 }
 

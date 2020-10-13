@@ -4,7 +4,7 @@
 #include <minwindef.h>
 
 extern "C" {
-#include "Dependencies/DirectOutput.h"
+#include "DirectOutput.h"
 }
 
 class DirectOutputWrapper
