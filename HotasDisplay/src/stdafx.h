@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include <assert.h>
+#include <functional>
 
 #include <Windows.h>
 #undef max

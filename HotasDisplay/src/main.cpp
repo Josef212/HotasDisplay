@@ -1,11 +1,7 @@
 #include "stdafx.h"
+#include "HelperFuncs.h"
 #include "DirectOutputWrapper.h"
-
-#include <string>
-#include <iostream>
-#include <cstdlib>
-#include <cstdio>
-#include <array>
+#include "DataProviders/PainiteDataProvider.h"
 
 // https://forums.frontier.co.uk/threads/how-to-use-x52-pro-sdk-making-us-of-the-mfd-and-leds.428813/
 
@@ -17,16 +13,14 @@ BOOL ControlHandler(DWORD fdwCtrlType);
 bool CheckSettingsFile(std::wstring& profilePath);
 void CreateSettingsFile();
 
-void GetPainitePrice(DirectOutputWrapper& output);
-void ReadPainitePrice(DirectOutputWrapper& output);
-
 int main()
 {
 	std::cout << "HOTAS Display" << std::endl;
 
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)ControlHandler, TRUE);
 
-	DirectOutputWrapper output;
+	PainiteDataProvider dataProvider;
+	DirectOutputWrapper output(&dataProvider);
 
 	if (output.Init(L"EliteDangerousX52MFD") != S_OK)
 	{
@@ -57,12 +51,12 @@ int main()
 	output.RegisterPageCbk();
 
 	output.SetPage(0, FLAG_SET_AS_ACTIVE);
-	output.UpdateCurrentPage();
 
 	while (!closeOnWindowX)
 	{
-		GetPainitePrice(output);
-		Sleep(5000);
+		dataProvider.Update();
+		output.UpdateCurrentPage();
+		Sleep(10000);
 
 		//static int counter = 0;
 		//wchar_t buffer[16];
@@ -94,41 +88,23 @@ BOOL ControlHandler(DWORD fdwCtrlType)
 
 bool CheckSettingsFile(std::wstring& profilePath)
 {
-	std::cout << "Checking for settings file... ";
+	std::cout << "Checking for settings file... " << std::endl;
 	const char* fileName = SETTINGS_FILE;
 	bool profileFound = false;
 
-	struct stat buffer;
-	if (stat(fileName, &buffer) == 0)
+	auto lineRead = [&](std::string& line, uint32_t lineNumber) 
 	{
-		std::cout << "FOUND. \nLoading filepaths." << std::endl;
-		std::ifstream stream(fileName);
-		std::string line;
-		int lineNumber = 0;
-		size_t strSize;
-
-		if (stream.is_open())
+		if (lineNumber == 0)
 		{
-			while (std::getline(stream, line))
-			{
-				std::cout << line << std::endl;
-				if (lineNumber == 0)
-				{
-					profilePath = std::wstring(line.begin(), line.end());
-					profileFound = true;
-				}
-
-				++lineNumber;
-			}
-
-			stream.close();
-			std::cout << std::endl;
+			profilePath = std::wstring(line.begin(), line.end());
+			profileFound = true;
 		}
-	}
-	else
+	};
+
+	if (!ReadTxtFile(SETTINGS_FILE, lineRead))
 	{
 		CreateSettingsFile();
-		return CheckSettingsFile(profilePath);
+		profileFound = CheckSettingsFile(profilePath);
 	}
 
 	return profileFound;
@@ -154,43 +130,4 @@ void CreateSettingsFile()
 	file.close();
 
 	std::cout << "Wrote to txt file." << std::endl;
-}
-
-void GetPainitePrice(DirectOutputWrapper& output)
-{
-	system("node scripts/price_request.js");
-	ReadPainitePrice(output);
-}
-
-void ReadPainitePrice(DirectOutputWrapper& output)
-{
-	std::cout << "Checking for prices file... ";
-	const char* fileName = "prices.txt";
-
-	struct stat buffer;
-	if (stat(fileName, &buffer) == 0)
-	{
-		std::cout << "FOUND. \Reading price." << std::endl;
-		std::ifstream stream(fileName);
-		std::string line;
-		int lineNumber = 0;
-		size_t strSize;
-
-		if (stream.is_open())
-		{
-			while (std::getline(stream, line))
-			{
-				std::cout << line << std::endl;
-				if (lineNumber >= 0 && lineNumber < 3)
-				{
-					output.SetString(0, lineNumber, std::wstring(line.begin(), line.end()).c_str());
-				}
-
-				++lineNumber;
-			}
-
-			stream.close();
-			std::cout << std::endl;
-		}
-	}
 }
