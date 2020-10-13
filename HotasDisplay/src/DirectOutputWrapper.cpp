@@ -6,9 +6,14 @@
 //#define CHECK_HR(hr) if(FAILED(hr)) { std::cout << "FAILED: " << std::system_category().message(m_hr) << std::endl; } else { std::cout << "DONE." << std::endl; }
 #define CHECK_HR(hr) CheckLastError()
 
-DirectOutputWrapper::DirectOutputWrapper() : m_deviceList(), m_dll(NULL), m_hr(S_OK), m_currentPage(0), m_scroll(0)
+DirectOutputWrapper::DirectOutputWrapper() : m_dataProvider(nullptr), m_deviceList(), m_dll(NULL), m_hr(S_OK), m_currentPage(0), m_scroll(0)
 {
 	
+}
+
+DirectOutputWrapper::DirectOutputWrapper(IDisplayDataProvider* dataProvider) : m_dataProvider(dataProvider), m_deviceList(), m_dll(NULL), m_hr(S_OK), m_currentPage(0), m_scroll(0)
+{
+
 }
 
 DirectOutputWrapper::~DirectOutputWrapper()
@@ -132,6 +137,18 @@ HRESULT DirectOutputWrapper::SetString(int pageNumber, int stringLineId, const w
 	return m_hr;
 }
 
+HRESULT DirectOutputWrapper::SetString(int pageNumber, int stringLineId, const std::string& output)
+{
+	std::cout << "Setting string [" << pageNumber << " - " << stringLineId << "] ... ";
+	auto setStringFn = GET_FN(Pfn_DirectOutput_SetString, m_dll, "DirectOutput_SetString");
+
+	std::wstring wstr(output.begin(), output.end());
+	m_hr = setStringFn(m_deviceList[0], pageNumber, stringLineId, wstr.size(), wstr.c_str());
+	CHECK_HR(m_hr);
+
+	return m_hr;
+}
+
 HRESULT DirectOutputWrapper::RegisterSoftBtnCbk()
 {
 	std::cout << "Registering soft buttons callback... ";
@@ -191,6 +208,10 @@ void DirectOutputWrapper::UpdatePage(int pageNumber)
 {
 	std::cout << "Updating page " << pageNumber << std::endl;
 
+	SetString(m_currentPage, 0, m_dataProvider->GetString(m_currentPage, 0));
+	SetString(m_currentPage, 1, m_dataProvider->GetString(m_currentPage, 1));
+	SetString(m_currentPage, 2, m_dataProvider->GetString(m_currentPage, 2));
+
 	//wchar_t buffer[16];
 	//swprintf_s(buffer, 16, L"Page: %d", pageNumber);
 	//SetString(pageNumber, 0, buffer);
@@ -202,6 +223,7 @@ void DirectOutputWrapper::UpdatePageOnScroll(int onDownMinusUp)
 {
 	assert(onDownMinusUp == 1 || onDownMinusUp == -1);
 	m_scroll += onDownMinusUp;
+	m_dataProvider->OnScrollUpdated(m_scroll);
 	UpdateCurrentPage();
 }
 
@@ -273,13 +295,14 @@ void __stdcall DirectOutputWrapper::OnSoftButtonChanged(void* hDevice, DWORD dwB
 {
 	std::cout << "\t# SoftButtonPressed: " << dwButtons << std::endl;
 
+	auto instance = INSTANCE(pCtx);
+
 	if (dwButtons & SoftButton_Up)
-		INSTANCE(pCtx)->UpdatePageOnScroll(-1);
+		instance->UpdatePageOnScroll(-1);
 	else if (dwButtons & SoftButton_Down)
-		INSTANCE(pCtx)->UpdatePageOnScroll(1);
-	else if (dwButtons & SoftButton_Select)
+		instance->UpdatePageOnScroll(1);
+	else if (dwButtons & SoftButton_Select && instance->GetDataProvider()->CanResetScroll())
 	{
-		auto instance = INSTANCE(pCtx);
 		instance->m_scroll = 0;
 		instance->UpdateCurrentPage();
 	}

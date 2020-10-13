@@ -1,5 +1,7 @@
 #pragma once
 
+#include "IDisplayDataProvider.h"
+
 #include <vector>
 #include <minwindef.h>
 
@@ -11,7 +13,11 @@ class DirectOutputWrapper
 {
 public:
 	DirectOutputWrapper();
+	DirectOutputWrapper(IDisplayDataProvider* dataProvider);
 	~DirectOutputWrapper();
+
+	void SetDataProvider(IDisplayDataProvider* dataProvider) { m_dataProvider = dataProvider; }
+	const IDisplayDataProvider* GetDataProvider() { return m_dataProvider; }
 
 	HRESULT Init(const wchar_t* pluginName);
 	HRESULT Deinit();
@@ -22,6 +28,7 @@ public:
 	HRESULT SetDeviceProfile(const wchar_t* filepath);
 	HRESULT SetPage(int pageNumber, const DWORD flag, const TCHAR* debugName = NULL);
 	HRESULT SetString(int pageNumber, int stringLineId, const wchar_t* output);
+	HRESULT SetString(int pageNumber, int stringLineId, const std::string& output);
 
 	HRESULT RegisterSoftBtnCbk();
 	HRESULT RegisterPageCbk();
@@ -45,9 +52,9 @@ private:
 private:
 	typedef std::vector<void*> DeviceList;
 
+	IDisplayDataProvider* m_dataProvider;
 	DeviceList m_deviceList;
 	HMODULE m_dll;
 	HRESULT m_hr;
 	int m_currentPage, m_scroll;
 };
-
